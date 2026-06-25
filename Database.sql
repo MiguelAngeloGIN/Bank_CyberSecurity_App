@@ -1,7 +1,6 @@
 create schema  Bank_Database;
 use Bank_Database;
 
-
 create table Clients ( 
     client_id int auto_increment primary key, 
     username varchar(50) unique,
@@ -131,7 +130,7 @@ create table TransactionsLog (
     transaction_id int, 
     from_account int not null, 
     to_account int not null,
-    amount decimal(15,2) not null check (amount > 0), 
+    amount decimal(15,2) not null, 
     log_time timestamp default current_timestamp(), 
     status enum ('completed', 'failed', 'pending', 'processing') not null,
     reference text,
@@ -139,12 +138,11 @@ create table TransactionsLog (
     foreign key (from_account) references Accounts (account_id),
     foreign key (to_account) references Accounts (account_id),
     foreign key (transaction_id) references Transactions (transaction_id)
-    check (from_account <> to_account)
 );
 
 
 -- track active user sessions
-CREATE TABLE UserSessions (
+create table UserSessions (
     session_id varchar(255) primary key,
     client_id int not null,
     session_token varchar(255) not null unique,
@@ -158,7 +156,7 @@ CREATE TABLE UserSessions (
 );
 
 -- in case mfa on, devices that are trusted only need password to login, others need mfa
-CREATE TABLE TrustedDevices (
+create table TrustedDevices (
     device_id int auto_increment primary key,
     client_id int not null,
     device_fingerprint varchar(255) not null,
@@ -204,6 +202,15 @@ level enum('low', 'medium', 'high', 'urgent'),
 details varchar (255),
 created_at timestamp default current_timestamp(),
 foreign key (client_id) references Clients (client_id)
+);
+
+create table TransactionReceipts (
+    receipt_id int auto_increment primary key,
+    transaction_id int not null,
+    pdf_hash varchar(255) not null,
+    digital_signature text not null,
+    created_at timestamp default current_timestamp(),
+    foreign key (transaction_id) references Transactions(transaction_id)
 );
 
 show tables;
@@ -283,6 +290,7 @@ on Clients(email);
 
 ## TRIGGERS
 
+delimiter $$
 create trigger log_transactions
 after update on Transactions
 for each row
