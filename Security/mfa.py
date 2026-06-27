@@ -4,7 +4,7 @@ import qrcode
 import secrets
 import cryptography
 
-key = "Hellomylovelolololol"
+
 class Time_OTP:
     @staticmethod
     def generate_totp(secret):
