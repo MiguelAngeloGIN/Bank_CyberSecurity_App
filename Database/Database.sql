@@ -81,7 +81,7 @@ create table MFA_BackupCodes (
 create table AuthMethodHistory ( 
     history_id int auto_increment primary key, 
     client_id int not null, 
-    type enum ('password', 'public_key', 'passcode', 'MFA_backupCode', 'MFA_secretKey'),
+    auth_type enum ('password', 'public_key', 'passcode', 'MFA_backupCode', 'MFA_secretKey'),
     changed_date timestamp default current_timestamp(), 
     authMethod_hash varchar(255) not null, 
     foreign key (client_id) references Clients (client_id)

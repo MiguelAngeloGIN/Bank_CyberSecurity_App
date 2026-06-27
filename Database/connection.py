@@ -17,8 +17,6 @@ class Connections:
    print ("Connected to database")
    return conn, cursor
   except Exception as e:
-   print (e)
-   return
+   raise e
 
 
-Connections.connect_database()
