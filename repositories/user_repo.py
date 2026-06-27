@@ -1,3 +1,5 @@
+from database.connection import Connections
+
 def get_cursor():
     conn, cursor = Connections.connect_database()
     return conn, cursor
