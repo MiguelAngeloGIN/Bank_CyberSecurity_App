@@ -1,36 +1,26 @@
 from argon2 import PasswordHasher, VerifyMismatchError      
 
-class PwdHasher:
- ph = PasswordHasher()
+# will be used to hash the password, the passcode and the mfa backup codes
+class Hasher:
+ h = PasswordHasher()
 
  @staticmethod
- def hash_password(password):
-  hashed_password = PwdHasher.ph.hash(password)
-  return hashed_password
+ def hash(value):
+  hashed = Hasher.h.hash(value)
+  return hashed
  
  @staticmethod
- def verify_password(stored_hash, new_pwd):
+ def verify_hash(stored_hash, value):
   try: 
-   PwdHasher.ph.verify(stored_hash, new_pwd)
+   Hasher.h.verify(stored_hash, value)
    return True
   except VerifyMismatchError:
    return False
   
-class MfaBackupHasher:
- mh = PasswordHasher()
 
- @staticmethod
- def hash_mfaCode(code):
-  hashed_password = MfaBackupHasher.mh.hash(code)
-  return hashed_password
- 
- @staticmethod
- def verify_password(stored_hash, new_code):
-  try: 
-   MfaBackupHasher.mh.verify(stored_hash, new_code)
-   return True
-  except VerifyMismatchError:
-   return False
+  
+
+
   
   
   
