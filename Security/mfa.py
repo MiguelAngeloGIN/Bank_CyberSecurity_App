@@ -1,9 +1,11 @@
-import time
 import pyotp
 import qrcode
 import secrets
-import cryptography
 
+
+def generate_Mfa_secret():
+ secret = pyotp.random_base32()
+ return secret
 
 class Time_OTP:
     @staticmethod
@@ -30,9 +32,11 @@ class Backup_MFAcode:
     def generate_backup():
         codes = []
         for _ in range(8):
-            code = secrets.token_hex(4)
+            code = secrets.token_urlsafe(8)
             codes.append(code)
         return codes
+    
+
     
 
     
