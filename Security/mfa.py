@@ -12,7 +12,7 @@ class Time_OTP:
         return totp.now()
     
     @staticmethod
-    def verify_totp(secret, totp_input):
+    def verify_totp(secret, totp_input): 
         totp = pyotp.TOTP(secret)
         return totp.verify(totp_input, valid_window=1)
     
@@ -34,10 +34,7 @@ class Backup_MFAcode:
             codes.append(code)
         return codes
     
-class Passkey:
-    @staticmethod
-    def s():
-        pass
+
     
 
 
