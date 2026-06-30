@@ -7,11 +7,14 @@ from cryptography.hazmat.primitives import serialization
 import base64
 import os
 from dotenv import load_dotenv
+import uuid
 
+load_dotenv()
+def add_nonce(message):       # nonce will be added in messages in order to prevent relay attacks by making same messages have different outputs
+    nonce = str(uuid.uuid4())  
+    return f"{message}|{nonce}"
 
 class KeyStorage: 
-  
-  load_dotenv()
   password = os.getenv("KEY_PASSWORD")
   if password:
     password = password.encode()
@@ -64,9 +67,16 @@ class SignMAC:
  # The mac signatures will be used by the program to verify integrity in the transfers
   # Because it is symetric is faster than digital signature 
   # It is used inside the backend only so it is okay for the key to be 1 shared 
+
+  secret = os.getenv("HMAC_SIGNATURE") # the secret is stored in the env
+  if not secret:
+        raise ValueError("HMAC_SIGNATURE not set in environment")
+  secret = secret.encode()
+
   @staticmethod
-  def sign_message(secret, message): 
-   signature = hmac.new(secret.encode(), message.encode(), hashlib.sha256).digest() 
+  def sign_message(message): 
+   message = add_nonce(message)
+   signature = hmac.new(SignMAC.secret, message.encode(), hashlib.sha256).digest() 
    return signature
  
   @staticmethod
@@ -78,25 +88,26 @@ class DigitalSignature:
   @staticmethod
   def digitally_sign(message):            # first hash message then use private key to sign
     private_key = KeyStorage.load_private_key()
+    message_nonced = add_nonce(message)
 
     signature = private_key.sign(
-        message.encode(),
+        message_nonced.encode(),
         padding.PSS(
             mgf=padding.MGF1(hashes.SHA256()),
             salt_length=padding.PSS.MAX_LENGTH
         ),
         hashes.SHA256()
     )
-    return signature
+    return signature, message_nonced
   
   @staticmethod
-  def verify_digital_sign(signature, message): # # verify by hashing the message, then compare with the decrypted signature (by the public key)
+  def verify_digital_sign(signature, message_nonced): # # verify by hashing the message, then compare with the decrypted signature (by the public key)
     try:
       public_key = KeyStorage.load_private_key().public_key()
 
       public_key.verify(
           signature, 
-          message.encode(), 
+          message_nonced.encode(), 
           padding.PSS(
               mgf=padding.MGF1(hashes.SHA256()),
               salt_length=padding.PSS.MAX_LENGTH
