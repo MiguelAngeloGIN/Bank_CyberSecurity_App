@@ -218,3 +218,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# Private keys and sensitive files
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+private_key.pem
+public_key.pem
+keys/
