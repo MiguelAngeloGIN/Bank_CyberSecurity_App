@@ -1,6 +1,6 @@
 # This will be used to generate the keys for digital signatures once  and save into the PEM file
 # Will not be put into the program so keys don't change all the time
-# The public key will be derived from the private key
+# The public key will be derived from the private key when needed 
 # Can run the code periodically to rotate the keys
 
 from cryptography.hazmat.primitives.asymmetric import rsa
