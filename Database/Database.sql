@@ -1,5 +1,6 @@
-create schema  Bank_Database;
-use Bank_Database;
+create schema  Bank_Cyber_Database;
+use  Bank_Cyber_Database;
+
 
 create table Clients ( 
     client_id int auto_increment primary key, 
@@ -12,7 +13,6 @@ create table Clients (
     street varchar(50) not null,
     postal_code varchar(50) not null,
     password_hash varchar(255) not null,
-    passkey_public_key varchar(255),    -- for fido passkey
     passcode_hash varchar(255) not null,
     mfa_secret varchar(255),
     mfa_active boolean default false, 
@@ -22,7 +22,7 @@ create table Clients (
     is_admin boolean default false,
     unique (phone_number, phone_country_code)
 );
-select * from clients;
+
 
 create table Clients_ids ( 
     client_id int, 
@@ -81,7 +81,7 @@ create table MFA_BackupCodes (
 create table AuthMethodHistory ( 
     history_id int auto_increment primary key, 
     client_id int not null, 
-    auth_type enum ('password', 'public_key', 'passcode', 'MFA_backupCode', 'MFA_secretKey'),
+    auth_type enum ('password', 'MFA_backupCode', 'MFA_secretKey'),
     changed_date timestamp default current_timestamp(), 
     authMethod_hash varchar(255) not null, 
     foreign key (client_id) references Clients (client_id)
@@ -115,29 +115,12 @@ create table Transactions (
     to_account int not null,
     amount decimal(15,2) not null check (amount > 0), 
     transaction_time timestamp default current_timestamp(), 
-    status enum ('completed', 'failed', 'pending', 'processing') not null,
+    status enum ('completed', 'failed', 'pending') not null,
     reference text,
     mac_signature varchar(255) not null,
+    nonce varchar(255) not null unique,
     foreign key (from_account) references Accounts (account_id),
-    foreign key (to_account) references Accounts (account_id),
-    check (from_account <> to_account)
-);
-
-
--- permanent, insert whenever a new transaction is innititated by the user
-create table TransactionsLog ( 
-    transactionLog_id int auto_increment primary key,
-    transaction_id int, 
-    from_account int not null, 
-    to_account int not null,
-    amount decimal(15,2) not null, 
-    log_time timestamp default current_timestamp(), 
-    status enum ('completed', 'failed', 'pending', 'processing') not null,
-    reference text,
-    mac_signature varchar(255) not null,
-    foreign key (from_account) references Accounts (account_id),
-    foreign key (to_account) references Accounts (account_id),
-    foreign key (transaction_id) references Transactions (transaction_id)
+    foreign key (to_account) references Accounts (account_id)
 );
 
 
@@ -147,7 +130,7 @@ create table UserSessions (
     client_id int not null,
     session_token varchar(255) not null unique,
     ip_address varchar(45) not null,      
-    user_agent text,        
+    -- user_agent text,        if i had developed web
     login_time timestamp default current_timestamp(),
     last_active timestamp default current_timestamp on update current_timestamp(),
     expires_at timestamp not null,
@@ -160,7 +143,7 @@ create table TrustedDevices (
     device_id int auto_increment primary key,
     client_id int not null,
     device_fingerprint varchar(255) not null,
-    user_agent text,                  
+   --  user_agent text if i had developed web,                  
     ip_address varchar(45) not null,
     last_used timestamp default current_timestamp on update current_timestamp,
     is_trusted boolean default true,
@@ -172,7 +155,7 @@ create table LoginAttempts (
     login_attempt_id int auto_increment primary key,
     client_id int not null,
     device_fingerprint varchar(255) not null,
-    user_agent text,                  
+    -- user_agent text if i had developed web,                  
     ip_address varchar(45) not null,
     location varchar(100),
     attempt_time timestamp  not null default current_timestamp(),
@@ -191,7 +174,8 @@ create table PasscodeAttempts (
     ip_address varchar(45),
     location varchar(100),
     risk_score int not null,
-    foreign key (client_id) references Clients(client_id)
+    foreign key (client_id) references Clients(client_id),
+    foreign key (account_id) references Accounts(account_id)
 );
 
 create table FraudAlerts (
@@ -204,138 +188,97 @@ created_at timestamp default current_timestamp(),
 foreign key (client_id) references Clients (client_id)
 );
 
-create table TransactionReceipts (
-    receipt_id int auto_increment primary key,
-    transaction_id int not null,
-    pdf_hash varchar(255) not null,
-    digital_signature text not null,
-    created_at timestamp default current_timestamp(),
-    foreign key (transaction_id) references Transactions(transaction_id)
-);
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-show tables;
--- ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- speeds up username login lookup
+create index idx_clients_username on Clients(username);
 
--- indexes for foreign keys
-create index clientId_trustedDevices
-on TrustedDevices (client_id);
+-- speeds up email login / recovery lookup
+create index idx_clients_email on Clients(email);
 
-create index accountId_accountOwners
-on AccountsOwners (account_id);
+-- speeds up lookup of identity documents per client
+create index idx_clients_ids_client on Clients_ids(client_id);
 
-create index clientId_accountOwners
-on AccountsOwners (client_id);
+-- speeds up filtering expired documents
+create index idx_clientsIds_expDate on Clients_ids(expiration_date);
 
-create index clientId_clientIds
-on Clients_ids (client_id);
+-- speeds up account lookup by IBAN
+create index idx_accounts_iban on Accounts(iban);
 
-create index clientId_userSessions
-on UserSessions (client_id);
+-- speeds up finding all accounts for a client
+create index idx_accountsowners_client on AccountsOwners(client_id);
 
-create index fromAccount_id_transactions
-on Transactions (from_account);
+-- speeds up finding all owners of an account
+create index idx_accountsowners_account on AccountsOwners(account_id);
 
-create index toAccount_id_transactions
-on Transactions (to_account);
+-- speeds up client-account join queries
+create index idx_accountsowners_client_account on AccountsOwners(client_id, account_id);
 
-create index clientId_notificationLog
-on NotificationLog (client_id);
+-- speeds up transaction sorting by time
+create index idx_transactions_time on Transactions(transaction_time);
 
-create index clientId_pswdResetTokens
-on PasswordResetTokens (client_id);
+-- speeds up lookup of outgoing transfers
+create index idx_transactions_from on Transactions(from_account);
 
-create index clientId_authHistory
-on AuthMethodHistory (client_id);
+-- speeds up lookup of incoming transfers
+create index idx_transactions_to on Transactions(to_account);
 
-create index clientId_mfaBackupCode 
-on MFA_BackupCodes (client_id);
+-- speeds up transaction analytics per time and sender
+create index idx_transactions_time_from on Transactions(transaction_time, from_account);
 
-create index idx_transactions_time 
-on Transactions(transaction_time);
+-- speeds up account limit lookup
+create index idx_transactionlimits_account on TransactionLimits(account_id);
 
-create index idx_usersessions_expires
-on UserSessions(expires_at);
+-- speeds up session lookup by client
+create index idx_usersessions_client on UserSessions(client_id);
 
-create index idx_transactions_between_accounts 
-on Transactions(from_account, to_account);
+-- speeds up session validation by token
+create index idx_usersessions_token on UserSessions(session_token);
 
-create index clientid_loginattempts 
-on LoginAttempts(client_id);
+-- speeds up session expiration checks
+create index idx_usersessions_expires on UserSessions(expires_at);
 
-create index clientid_passcodeattempts 
-on PasscodeAttempts(client_id);
+-- speeds up login history lookup per user
+create index idx_loginattempts_client on LoginAttempts(client_id);
 
-create index clientid_fraudalerts
-on FraudAlerts(client_id);
+-- speeds up login attempts ordered by time
+create index idx_loginattempts_time on LoginAttempts(attempt_time);
 
-create index idx_loginattempts_time
-on LoginAttempts(attempt_time);
+-- speeds up fraud detection queries per user and time window
+create index idx_loginattempts_client_time on LoginAttempts(client_id, attempt_time);
 
-create index idx_passcodeattempts_time
-on PasscodeAttempts(attempt_time);
+-- speeds up fraud analysis per user over time window
+create index idx_loginattempts_risk_time on LoginAttempts(client_id, risk_score, attempt_time);
 
-create index idx_usersessions_token
-on UserSessions(session_token);
+-- speeds up passcode attempt lookup per user
+create index idx_passcodeattempts_client on PasscodeAttempts(client_id);
 
-create index idx_accounts_iban
-on Accounts(iban);
+-- speeds up passcode attempts ordered by time
+create index idx_passcodeattempts_time on PasscodeAttempts(attempt_time);
 
-create index idx_clients_username
-on Clients(username);
+-- speeds up passcode fraud detection per user and time 
+create index idx_passcodeattempts_client_time on PasscodeAttempts(client_id, attempt_time);
 
-create index idx_clients_email 
-on Clients(email);
+-- speeds up fraud alert lookup per user
+create index idx_fraudalerts_client on FraudAlerts(client_id);
+
+-- speeds up notification lookup per user
+create index idx_notification_client on NotificationLog(client_id);
+
+-- speeds up notification status/time filtering
+create index idx_notification_status_time on NotificationLog(status, created_at);
+
+-- speeds up MFA backup code lookup per user
+create index idx_mfa_backup_client on MFA_BackupCodes(client_id);
+
+-- speeds up auth history lookup per user
+create index idx_authhistory_client on AuthMethodHistory(client_id);
+
+-- speeds up password reset lookup per user
+create index idx_passwordresettokens_client on PasswordResetTokens(client_id);
 
 -- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-## TRIGGERS
-
-delimiter $$
-create trigger log_transactions
-after update on Transactions
-for each row
-begin
-	if old.status <> new.status then 
-	insert into TransactionsLog ( 
-    transaction_id, 
-    from_account, 
-    to_account,
-    amount, 
-    log_time, 
-    status,
-    reference,
-    mac_signature 
-)
-values(
-    new. transaction_id, 
-    new.from_account, 
-    new.to_account,
-    new.amount, 
-    new.transaction_time, 
-    new.status,
-    new.reference,
-    new.mac_signature
-);
-end if;
-end $$
-delimiter;
-
-
-delimiter $$
-create trigger no_negative_balance
-before insert on Transactions
-for each row
-begin
-	declare cur_balance decimal (15,2);
-    select balance into cur_balance from Accounts where account_id = new.from_account;
-if new.amount > cur_balance then 
-	signal sqlstate '45000' set message_text = 'Insufficient funds';
-end if;
-end $$
-delimiter;
-
-
-SHOW TRIGGERS;
 
 
 

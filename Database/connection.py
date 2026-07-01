@@ -11,7 +11,7 @@ class Connections:
      host = "localhost",
      user = os.getenv("MY_USER"),
      password = os.getenv("MY_PASSWORD"),
-     database = "Bank_Database"
+     database = " Bank_Cyber_Database"
      )
    cursor = conn.cursor()
    print ("Connected to database")
