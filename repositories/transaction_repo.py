@@ -25,18 +25,6 @@ def exe_cursor(sql, values = None, commit = True):
 class TransactionSql(): 
     #Insert method 
     @staticmethod
-    def insert_transactionReceipt(transaction_id, pdf_hash, digital_signature):
-
-                    sql = """INSERT INTO TransactionReceipts (transaction_id, pdf_hash, digital_signature)
-
-                    VALUES (%s, %s, %s)
-                    """
-
-                    values = (transaction_id, pdf_hash, digital_signature)
-
-                    exe_cursor(sql, values)
-
-    @staticmethod
     def insert_transaction(from_account, to_account, amount, reference,
                             mac_signature, nonce, status = "pending"):
 
@@ -52,9 +40,9 @@ class TransactionSql():
                     exe_cursor(sql, values)    
     
     @staticmethod
-    def insert_transaction(account_id, daily_limit, per_transaction_limit):
+    def insert_transactionLimit(account_id, daily_limit, per_transaction_limit):
 
-                    sql = """INSERT INTO Transactions (account_id, daily_limit, per_transaction_limit))
+                    sql = """INSERT INTO TransactionLimits (account_id, daily_limit, per_transaction_limit)
 
                     VALUES (%s, %s, %s)
                     """
@@ -62,33 +50,15 @@ class TransactionSql():
                     values = (account_id, daily_limit, per_transaction_limit)
 
       
-                    exe_cursor(sql, values)    
+                    exe_cursor(sql, values)   
 
-
-
-create table Transactions ( 
-    transaction_id int auto_increment primary key, 
-    from_account int not null, 
-    to_account int not null,
-    amount decimal(15,2) not null check (amount > 0), 
-    transaction_time timestamp default current_timestamp(), 
-    status enum ('completed', 'failed', 'pending') not null,
-    reference text,
-    mac_signature varchar(255) not null,
-    nonce varchar(255) not null unique,
-    foreign key (from_account) references Accounts (account_id),
-    foreign key (to_account) references Accounts (account_id)
-);
- create table TransactionLimits (
-    account_id int primary key,
-    daily_limit decimal(10,2) default 100000,
-    per_transaction_limit decimal (10,2) default 50000,
-    foreign key (account_id) references Accounts(account_id)
-);
-
-   
-
-
-
+    @staticmethod
+    def update_transaction_status(transaction_id, status):
+        sql = """UPDATE Transactions 
+                 SET status = %s
+                 WHERE transaction_id = %s
+              """
+        values = (status, transaction_id)
+        exe_cursor(sql, values) 
 
 
