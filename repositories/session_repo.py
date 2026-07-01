@@ -31,29 +31,29 @@ class SessionSql():
     
     #Insert method 
     @staticmethod
-    def insert_session(session_id, client_id, session_token, ip_address, user_agent):
+    def insert_session(session_id, client_id, session_token, ip_address):
                     
 
-                    sql = """INSERT INTO UserSessions (session_id, client_id, session_token, ip_address, user_agent, expires_at)
+                    sql = """INSERT INTO UserSessions (session_id, client_id, session_token, ip_address, expires_at)
 
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s)
                     """
 
                     exp = SessionSql.set_expire()
     
-                    values = (session_id, client_id, session_token, ip_address, user_agent, exp)
+                    values = (session_id, client_id, session_token, ip_address, exp)
 
                     exe_cursor(sql, values)
 
     @staticmethod
-    def insert_trustedDevice(client_id, device_fingerprint, user_agent, ip_address):
+    def insert_trustedDevice(client_id, device_fingerprint, ip_address):
                     
 
-                    sql = """INSERT INTO TrustedDevices (client_id, device_fingerprint, user_agent, ip_address)
-                             VALUES (%s, %s, %s, %s)
+                    sql = """INSERT INTO TrustedDevices (client_id, device_fingerprint, ip_address)
+                             VALUES (%s, %s, %s)
                     """
     
-                    values = (client_id, device_fingerprint, user_agent, ip_address)
+                    values = (client_id, device_fingerprint, ip_address)
 
                     exe_cursor(sql, values)
 

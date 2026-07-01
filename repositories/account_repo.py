@@ -57,6 +57,15 @@ class AccountSql():
        values = (account_id,)
         
        exe_cursor (sql, values)
+
+    @staticmethod
+    def activate_account(account_id):
+     sql = """UPDATE Accounts
+             SET is_active = True
+             WHERE account_id = %s
+          """
+     values = (account_id,)
+     exe_cursor(sql, values)
          
 
 
