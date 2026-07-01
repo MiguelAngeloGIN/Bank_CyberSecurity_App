@@ -23,6 +23,23 @@ def exe_cursor(sql, values = None, commit = True):
          cursor.close()
          conn.close()
 
+def fetch_cursor(sql, values=None, fetch_one=False):
+    """For SELECT queries - returns data"""
+    conn, cursor = get_cursor()
+    try:
+        if values:
+            cursor.execute(sql, values)
+        else:
+            cursor.execute(sql)
+        if fetch_one:
+            result = cursor.fetchone()
+        else:
+            result = cursor.fetchall()
+        return result
+    finally:
+        cursor.close()
+        conn.close()
+
 class AccountSql(): 
     #Insert methods
     @staticmethod
@@ -66,6 +83,15 @@ class AccountSql():
           """
      values = (account_id,)
      exe_cursor(sql, values)
+
+    @staticmethod
+    def get_account_by_iban(iban):
+       sql = """
+            SELECT account_id
+            FROM Accounts
+            WHERE iban = %s
+          """
+       return fetch_cursor(sql, (iban,), fetch_one=True)
          
 
 

@@ -22,6 +22,23 @@ def exe_cursor(sql, values = None, commit = True):
          cursor.close()
          conn.close()
 
+def fetch_cursor(sql, values=None, fetch_one=False):
+    """For SELECT queries - returns data"""
+    conn, cursor = get_cursor()
+    try:
+        if values:
+            cursor.execute(sql, values)
+        else:
+            cursor.execute(sql)
+        if fetch_one:
+            result = cursor.fetchone()
+        else:
+            result = cursor.fetchall()
+        return result
+    finally:
+        cursor.close()
+        conn.close()
+        
 
 class UserSql(): 
     #Insert methods    
@@ -44,20 +61,20 @@ class UserSql():
              
     @staticmethod
     def insert_clientId(client_id, id_number, given_names, last_name, id_type, birthday, 
-                     nationality, emission_country, issue_date, expiration_date,
-                     is_verified
+                     nationality, emission_country, issue_date, expiration_date
+                    
                      ):
 
                     sql = """INSERT INTO Clients_ids (client_id, id_number, given_names, last_name, id_type, birthday, 
-                     nationality, emission_country, issue_date, expiration_date,
-                     is_verified)
+                     nationality, emission_country, issue_date, expiration_date
+                     )
 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
 
                     values = (client_id, id_number, given_names, last_name, id_type, birthday, 
-                     nationality, emission_country, issue_date, expiration_date,
-                     is_verified)
+                     nationality, emission_country, issue_date, expiration_date
+                     )
                     
                     exe_cursor(sql, values)
     @staticmethod
@@ -124,6 +141,48 @@ class UserSql():
             
             exe_cursor (sql)
     
+    @staticmethod
+    def get_client_by_username(username):
+     sql = "SELECT client_id FROM Clients WHERE username = %s"
+     return fetch_cursor(sql, (username,), fetch_one=True)
+
+
+    @staticmethod
+    def get_client_by_email(email):
+      sql = "SELECT client_id FROM Clients WHERE email = %s"
+      return fetch_cursor(sql, (email,), fetch_one=True)
+
+
+    @staticmethod
+    def get_client_by_phone(phone_country_code, phone_number):
+      sql = """
+      SELECT client_id 
+      FROM Clients 
+      WHERE phone_country_code = %s AND phone_number = %s
+      """
+      return fetch_cursor(sql, (phone_country_code, phone_number), fetch_one=True)
+
+
+    @staticmethod
+    def get_client_by_id_number(id_number, emission_country):
+      sql = """
+      SELECT client_id 
+      FROM Clients_ids 
+      WHERE id_number = %s AND emission_country = %s
+      """
+      return fetch_cursor(sql, (id_number, emission_country), fetch_one=True)
    
-    
-    
+    @staticmethod
+    def is_verified(client_id):
+      sql = """
+      SELECT is_verified
+      FROM Clients_ids
+      WHERE client_id = %s
+      """
+      result = fetch_cursor(sql, (client_id,), fetch_one=True)
+
+      if not result:
+        return False
+
+      return bool(result[0])
+
