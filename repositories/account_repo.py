@@ -51,10 +51,10 @@ class AccountSql():
     def deactivate_account(account_id):
        sql = """
                 UPDATE Accounts
-                SET is_active = %s
+                SET is_active = False
                 WHERE account_id = %s
                """
-       values = (False, account_id)
+       values = (account_id,)
         
        exe_cursor (sql, values)
          

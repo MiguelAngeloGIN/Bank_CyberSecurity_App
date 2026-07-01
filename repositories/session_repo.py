@@ -51,11 +51,6 @@ class SessionSql():
 
                     sql = """INSERT INTO TrustedDevices (client_id, device_fingerprint, user_agent, ip_address)
                              VALUES (%s, %s, %s, %s)
-                             ON DUPLICATE KEY UPDATE
-                             last_used = CURRENT_TIMESTAMP,
-                             ip_address = VALUES(ip_address),
-                             user_agent = VALUES(user_agent);)
-
                     """
     
                     values = (client_id, device_fingerprint, user_agent, ip_address)

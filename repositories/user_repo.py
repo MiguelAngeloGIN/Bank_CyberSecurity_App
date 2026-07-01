@@ -27,42 +27,39 @@ class UserSql():
     #Insert methods    
     @staticmethod
     def insert_client(username, email, phone_country_code, phone_number, city,
-                    street, postal_code, password_hash, passkey_public_key, 
-                    digital_signature_public_key, passcode_hash, mfa_secret):
+                    street, postal_code, password_hash, passcode_hash, mfa_secret):
                      
 
                     sql = """INSERT INTO Clients (username, email, phone_country_code, phone_number, city,
-                    street, postal_code, password_hash, passkey_public_key, digital_signature_public_key
-                    passcode_hash, mfa_secret)
-
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """
-
-                    values = (username, email, phone_country_code, phone_number, city,
-                    street, postal_code, password_hash, passkey_public_key,
-                    digital_signature_public_key, passcode_hash, mfa_secret)
-
-                    exe_cursor(sql, values)
-                    
-    @staticmethod
-    def insert_clientId(client_id, given_names, last_name, id_type, birthday, 
-                     nationality, emission_country, issue_date, expiration_date,
-                     is_verified
-                     ):
-
-                    sql = """INSERT INTO Clients_ids (client_id, given_names, last_name, id_type, birthday, 
-                     nationality, emission_country, issue_date, expiration_date,
-                     is_verified)
+                    street, postal_code, password_hash, passcode_hash, mfa_secret)
 
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
 
-                    values = (client_id, given_names, last_name, id_type, birthday, 
+                    values = (username, email, phone_country_code, phone_number, city,
+                    street, postal_code, password_hash, passcode_hash, mfa_secret)
+
+                    exe_cursor(sql, values)
+
+             
+    @staticmethod
+    def insert_clientId(client_id, id_number, given_names, last_name, id_type, birthday, 
+                     nationality, emission_country, issue_date, expiration_date,
+                     is_verified
+                     ):
+
+                    sql = """INSERT INTO Clients_ids (client_id, id_number, given_names, last_name, id_type, birthday, 
+                     nationality, emission_country, issue_date, expiration_date,
+                     is_verified)
+
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """
+
+                    values = (client_id, id_number, given_names, last_name, id_type, birthday, 
                      nationality, emission_country, issue_date, expiration_date,
                      is_verified)
                     
                     exe_cursor(sql, values)
-
     @staticmethod
     def insert_notification(client_id, notification_type, notification_purpose, status):
             sql = """ INSERT INTO NotificationLog (client_id, notification_type, notification_purpose, status)
@@ -73,15 +70,25 @@ class UserSql():
 
             exe_cursor(sql, values)
 
+    @staticmethod
+    def insert_fraudAlert(client_id, cause, level, details):
+            sql = """ INSERT INTO FraudAlerts (client_id, cause, level, details)
+
+                      VALUES (%s, %s, %s, %s)
+                  """
+            values = (client_id, cause, level, details)
+
+            exe_cursor(sql, values)
+
     # Update methods    
     @staticmethod
     def deactivate_client(client_id):
             sql = """
                     UPDATE Clients
-                    SET is_active = %s
+                    SET is_active = False
                     WHERE client_id = %s
                    """
-            values = (False, client_id)
+            values = (client_id,)
 
             exe_cursor (sql, values)
     
@@ -89,10 +96,10 @@ class UserSql():
     def activate_client(client_id):
             sql = """
                     UPDATE Clients
-                    SET is_active = %s
+                    SET is_active = True
                     WHERE client_id = %s
                    """
-            values = (True, client_id) 
+            values = (client_id,) 
 
             exe_cursor (sql, values)
     
@@ -100,10 +107,10 @@ class UserSql():
     def verify_id(client_id):
             sql = """
                     UPDATE Clients_ids
-                    SET is_verified = %s
+                    SET is_verified = True
                     WHERE client_id = %s
                    """
-            values = (True, client_id)
+            values = (client_id,)
 
             exe_cursor (sql, values)
     
@@ -111,12 +118,11 @@ class UserSql():
     def expire_id():
             sql = """
                     UPDATE Clients_ids
-                    SET is_verified = %s
+                    SET is_expired = True
                     WHERE expiration_date < NOW ()
                    """
-            values = (False,) 
-
-            exe_cursor (sql, values)
+            
+            exe_cursor (sql)
     
    
     

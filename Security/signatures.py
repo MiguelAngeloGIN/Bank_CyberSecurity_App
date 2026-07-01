@@ -10,24 +10,32 @@ from dotenv import load_dotenv
 import uuid
 
 load_dotenv()
+
+key_password = os.getenv("KEY_PASSWORD")
+if key_password:
+    key_password = key_password.encode()
+else:
+    raise ValueError("KEY_PASSWORD not set") 
+
+
+mac_secret = os.getenv("HMAC_SIGNATURE") # the secret is stored in the env
+if not mac_secret:
+        raise ValueError("HMAC_SIGNATURE not set in environment")
+mac_secret = mac_secret.encode()
+
+
 def add_nonce(message):       # nonce will be added in messages in order to prevent relay attacks by making same messages have different outputs
     nonce = str(uuid.uuid4())  
     return f"{message}|{nonce}"
 
 class KeyStorage: 
-  password = os.getenv("KEY_PASSWORD")
-  if password:
-    password = password.encode()
-  else:
-    raise ValueError("KEY_PASSWORD not set") 
-
   # Private keys stored in a .pem file for more security
   @staticmethod
   def save_private_key(private_key, filename="private_key.pem"):
      pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.BestAvailableEncryption(KeyStorage.password) 
+        encryption_algorithm=serialization.BestAvailableEncryption(key_password) 
      )
 
      with open(filename, "wb") as f:
@@ -40,7 +48,7 @@ class KeyStorage:
      pem_data = f.read()
      key = serialization.load_pem_private_key(
          pem_data,
-         password=KeyStorage.password
+         password=key_password
      )
      return key
     
@@ -68,15 +76,10 @@ class SignMAC:
   # Because it is symetric is faster than digital signature 
   # It is used inside the backend only so it is okay for the key to be 1 shared 
 
-  secret = os.getenv("HMAC_SIGNATURE") # the secret is stored in the env
-  if not secret:
-        raise ValueError("HMAC_SIGNATURE not set in environment")
-  secret = secret.encode()
-
   @staticmethod
   def sign_message(message): 
    message = add_nonce(message)
-   signature = hmac.new(SignMAC.secret, message.encode(), hashlib.sha256).digest() 
+   signature = hmac.new(mac_secret, message.encode(), hashlib.sha256).digest() 
    return signature
  
   @staticmethod

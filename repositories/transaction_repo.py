@@ -38,57 +38,55 @@ class TransactionSql():
 
     @staticmethod
     def insert_transaction(from_account, to_account, amount, reference,
-                            mac_signature, status = "pending"):
+                            mac_signature, nonce, status = "pending"):
 
                     sql = """INSERT INTO Transactions (from_account, to_account,
-                                          amount, status, reference, mac_signature)
-
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    """
-
-                    values = (from_account, to_account, amount, status, reference, mac_signature)
-
-                    exe_cursor(sql, values)    
-
-    @staticmethod
-    def insert_transactionLog(transaction_id, from_account, to_account,
-                                   amount, status, reference, mac_signature):
-
-                    sql = """INSERT INTO TransactionsLog (transaction_id, from_account, to_account,
-                                          amount, status, reference, mac_signature)
+                                          amount, status, reference, mac_signature, nonce)
 
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                     """
 
-                    values = (transaction_id, from_account, to_account,amount, status, reference, mac_signature)
+                    values = (from_account, to_account, amount, status, reference, mac_signature, nonce)
 
+      
                     exe_cursor(sql, values)    
-
-    #update
-    @staticmethod
-    def update_failed_transactionStatus(transaction_id):
-            sql = """
-                    UPDATE Transactions
-                    SET status = %s
-                    WHERE transaction_id = %s
-                   """
-
-            values =  ("failed", transaction_id)
-
-            exe_cursor(sql, values)
     
     @staticmethod
-    def update_complete_transactionStatus(transaction_id):
-            sql = """
-                    UPDATE Transactions
-                    SET status = %s
-                    WHERE transaction_id = %s
-                   """
+    def insert_transaction(account_id, daily_limit, per_transaction_limit):
 
-            values =  ("completed", transaction_id)
+                    sql = """INSERT INTO Transactions (account_id, daily_limit, per_transaction_limit))
 
-            exe_cursor(sql, values)
+                    VALUES (%s, %s, %s)
+                    """
 
+                    values = (account_id, daily_limit, per_transaction_limit)
+
+      
+                    exe_cursor(sql, values)    
+
+
+
+create table Transactions ( 
+    transaction_id int auto_increment primary key, 
+    from_account int not null, 
+    to_account int not null,
+    amount decimal(15,2) not null check (amount > 0), 
+    transaction_time timestamp default current_timestamp(), 
+    status enum ('completed', 'failed', 'pending') not null,
+    reference text,
+    mac_signature varchar(255) not null,
+    nonce varchar(255) not null unique,
+    foreign key (from_account) references Accounts (account_id),
+    foreign key (to_account) references Accounts (account_id)
+);
+ create table TransactionLimits (
+    account_id int primary key,
+    daily_limit decimal(10,2) default 100000,
+    per_transaction_limit decimal (10,2) default 50000,
+    foreign key (account_id) references Accounts(account_id)
+);
+
+   
 
 
 
